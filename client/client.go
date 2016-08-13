@@ -22,12 +22,21 @@ func Dial(address string, timeout time.Duration, options ...Option) (*DB, error)
 	if err != nil {
 		return nil, err
 	}
+	return NewDB(conn), nil
+}
 
-	return &DB{c: pb.NewDBClient(conn), conn: conn}, nil
+func NewDB(conn *grpc.ClientConn) *DB {
+	return &DB{c: pb.NewDBClient(conn), conn: conn}
 }
 
 func (db *DB) Close() error {
-	return db.conn.Close()
+	if db == nil || db.conn == nil || db.c == nil {
+		return errors.New("database is shut down")
+	}
+	err := db.conn.Close()
+	db.conn = nil
+	db.c = nil
+	return err
 }
 
 type Pair struct {
@@ -118,36 +127,47 @@ func (db *DB) Range(ctx context.Context, r Range, rev int64) ([]Pair, error) {
 	return pairs, nil
 }
 
-type TxnResult struct {
-	resps []*pb.Response
-	keys  [][]byte
-}
-
-func (r TxnResult) Len() int { return len(r.resps) }
-
-func (r *TxnResult) Next() (key []byte, num int32, rev int64, ok bool) {
-	if r == nil || len(r.resps) == 0 || len(r.keys) == 0 {
-		return key, 0, 0, false
+func (db *DB) Insert(ctx context.Context, key, value []byte) (int64, error) {
+	resp, err := db.c.Put(ctx, &pb.PutRequest{Key: key, Value: value, Tombstone: true})
+	if err != nil {
+		return 0, err
 	}
-
-	resp := r.resps[0]
-	key = r.keys[0]
-	r.resps = r.resps[1:]
-	r.keys = r.keys[1:]
-
-	num = resp.Num
-	rev = resp.Rev
-	return key, num, rev, true
+	return resp.Rev, nil
 }
 
-func (db *DB) Apply(ctx context.Context, b *TxnBatch) (*TxnResult, error) {
-	resp, err := db.c.Txn(ctx, b.txnRequest())
+func (db *DB) Put(ctx context.Context, key, value []byte) (int64, error) {
+	resp, err := db.c.Put(ctx, &pb.PutRequest{Key: key, Value: value})
+	if err != nil {
+		return 0, err
+	}
+	return resp.Rev, nil
+}
+
+func (db *DB) Delete(ctx context.Context, key []byte) (int64, error) {
+	resp, err := db.c.Delete(ctx, &pb.DeleteRequest{Key: key})
+	if err != nil {
+		return 0, err
+	}
+	return resp.Rev, nil
+}
+
+func (db *DB) Txn(ctx context.Context, batch *TxnBatch) ([]TxnResult, error) {
+	resp, err := db.c.Txn(ctx, batch.txnRequest())
 	if err != nil {
 		return nil, err
 	}
-	if len(resp.Responses) != b.Len() {
-		return nil, errors.New("result length mismatch")
-	}
 
-	return &TxnResult{resps: resp.Responses, keys: b.keys()}, nil
+	results := make([]TxnResult, 0, len(resp.Responses))
+	for _, r := range resp.Responses {
+		req := batch.request(r.Num)
+		if req == nil {
+			return nil, errors.New("txnid not found")
+		}
+
+		results = append(results, TxnResult{
+			key: req.Key,
+			m:   r,
+		})
+	}
+	return results, nil
 }

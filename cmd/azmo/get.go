@@ -29,10 +29,11 @@ func (c getCmd) Run(ctx context.Context, db *client.DB, args []string) (err erro
 		return err
 	}
 
-	fmt.Printf("key:%q revisions:%v revision:%d\n%s\n",
+	fmt.Printf("get key:%q revisions:%v revision:%d\n%s\n",
 		pair.Key(), pair.Revisions(), pair.Revision(), pair.Value())
 	return err
 }
 
 func (c getCmd) Name() string { return "get" }
+func (c getCmd) Args() string { return "key [rev]" }
 func (c getCmd) Help() string { return "TODO" }

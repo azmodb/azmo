@@ -6,11 +6,11 @@ import (
 	"github.com/azmodb/azmo/pb"
 )
 
-type requests []*pb.Request
+type requests []*pb.GenericRequest
 
 func (r *requests) Put(num int32, key, value []byte, tombstone bool) {
-	*r = append(*r, &pb.Request{
-		Type:      pb.Request_PutRequest,
+	*r = append(*r, &pb.GenericRequest{
+		Type:      pb.GenericRequest_PutRequest,
 		Num:       num,
 		Key:       key,
 		Value:     value,
@@ -19,8 +19,8 @@ func (r *requests) Put(num int32, key, value []byte, tombstone bool) {
 }
 
 func (r *requests) Delete(num int32, key []byte) {
-	*r = append(*r, &pb.Request{
-		Type: pb.Request_DeleteRequest,
+	*r = append(*r, &pb.GenericRequest{
+		Type: pb.GenericRequest_DeleteRequest,
 		Num:  num,
 		Key:  key,
 	})
@@ -38,10 +38,16 @@ type TxnBatch struct {
 
 func NewTxnBatch() *TxnBatch { return &TxnBatch{reqs: requests{}} }
 
-func (b *TxnBatch) Put(key, value []byte, tombstone bool) {
+func (b *TxnBatch) Insert(key, value []byte) {
 	b.sorted = false
 	b.num++
-	b.reqs.Put(b.num, key, value, tombstone)
+	b.reqs.Put(b.num, key, value, true)
+}
+
+func (b *TxnBatch) Put(key, value []byte) {
+	b.sorted = false
+	b.num++
+	b.reqs.Put(b.num, key, value, false)
 }
 
 func (b *TxnBatch) Delete(key []byte) {
@@ -52,7 +58,7 @@ func (b *TxnBatch) Delete(key []byte) {
 
 func (b *TxnBatch) Len() int { return len(b.reqs) }
 
-func (b *TxnBatch) Sort() {
+func (b *TxnBatch) sort() {
 	if !b.sorted {
 		sort.Sort(b.reqs)
 	}
@@ -63,16 +69,16 @@ func (b *TxnBatch) txnRequest() *pb.TxnRequest {
 		return nil
 	}
 
-	b.Sort()
+	b.sort()
 	return &pb.TxnRequest{Requests: b.reqs}
 }
 
-func (b *TxnBatch) request(num int32) *pb.Request {
+func (b *TxnBatch) request(num int32) *pb.GenericRequest {
 	if b == nil || b.reqs == nil {
 		return nil
 	}
 
-	b.Sort()
+	b.sort()
 	i := sort.Search(len(b.reqs), func(i int) bool {
 		return b.reqs[i].Num >= num
 	})
@@ -85,10 +91,23 @@ func (b *TxnBatch) request(num int32) *pb.Request {
 	return nil
 }
 
-func (b *TxnBatch) keys() [][]byte {
-	keys := make([][]byte, 0, len(b.reqs))
-	for _, req := range b.reqs {
-		keys = append(keys, req.Key)
+type TxnResult struct {
+	m   *pb.GenericResponse
+	key []byte
+}
+
+func (r TxnResult) Key() []byte { return r.key }
+
+func (r TxnResult) Num() int32 {
+	if r.key == nil || r.m == nil {
+		return 0
 	}
-	return keys
+	return r.m.Num
+}
+
+func (r TxnResult) Revision() int64 {
+	if r.key == nil || r.m == nil {
+		return 0
+	}
+	return r.m.Rev
 }

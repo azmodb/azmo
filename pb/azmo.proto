@@ -5,39 +5,39 @@ service DB {
 	rpc Range(RangeRequest) returns (stream RangeResponse);
 	rpc Get(GetRequest) returns (GetResponse);
 	
+	rpc Delete(DeleteRequest) returns (DeleteResponse);
+	rpc Put(PutRequest) returns (PutResponse);
 	rpc Txn(TxnRequest) returns (TxnResponse);
-	//rpc Delete(DeleteRequest) returns (DeleteResponse);
-	//rpc Put(PutRequest) returns (PutResponse);
 }
 
 message TxnRequest {
-	repeated Request requests = 1;
+	repeated GenericRequest requests = 1;
 }
 
 message TxnResponse {
-	repeated Response responses = 1;
+	repeated GenericResponse responses = 1;
 }
 
-message Request {
+message GenericRequest {
 	enum Type {
 		InvalidRequest = 0;
 		DeleteRequest = 1;
 		PutRequest = 2;
 	}
 
-	Type type = 1;
-	int32 num = 2;
-	bytes key = 3;
-	bytes value = 4;
-	bool tombstone = 5;
+	Type type = 1; // required field
+	int32 num = 2; // required field
+	bytes key = 3; // required field
+
+	bytes value = 4;    // put only
+	bool tombstone = 5; // put only
 }
 
-message Response {
+message GenericResponse {
 	int32 num = 1;
 	int64 rev = 2;
 }
 
-/*
 message PutRequest {
 	bytes key = 2;
 	bytes value = 3;
@@ -55,13 +55,11 @@ message DeleteRequest {
 message DeleteResponse {
 	int64 rev = 1;
 }
-*/
 
 message GetRequest {
 	bytes key = 1;
 	int64 rev = 2;
 }
-
 
 message GetResponse {
 	bytes value = 1;

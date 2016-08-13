@@ -10,26 +10,20 @@ import (
 
 type deleteCmd struct{}
 
-func (c deleteCmd) Run(ctx context.Context, db *client.DB, args []string) (err error) {
+func (c deleteCmd) Run(ctx context.Context, db *client.DB, args []string) error {
 	if len(args) < 1 {
 		return errors.New("delete: requires 1 argument")
 	}
 
 	key := []byte(args[0])
-	batch := client.NewTxnBatch()
-	batch.Delete(key)
-
-	result, err := db.Apply(ctx, batch)
+	rev, err := db.Delete(ctx, key)
 	if err != nil {
 		return err
 	}
-
-	for key, num, rev, ok := result.Next(); ok; {
-		fmt.Printf("key:%q txnid:%d revision:%d\n", key, num, rev)
-		key, num, rev, ok = result.Next()
-	}
-	return err
+	fmt.Printf("delete key:%q revision:%d\n", key, rev)
+	return nil
 }
 
 func (c deleteCmd) Name() string { return "delete" }
+func (c deleteCmd) Args() string { return "key" }
 func (c deleteCmd) Help() string { return "TODO" }
