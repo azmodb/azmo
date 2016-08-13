@@ -1,0 +1,83 @@
+syntax = "proto3";
+package pb;
+
+service DB {
+	rpc Range(RangeRequest) returns (stream RangeResponse);
+	rpc Get(GetRequest) returns (GetResponse);
+	
+	rpc Txn(TxnRequest) returns (TxnResponse);
+	//rpc Delete(DeleteRequest) returns (DeleteResponse);
+	//rpc Put(PutRequest) returns (PutResponse);
+}
+
+message TxnRequest {
+	repeated Request requests = 1;
+}
+
+message TxnResponse {
+	repeated Response responses = 1;
+}
+
+message Request {
+	enum Type {
+		InvalidRequest = 0;
+		DeleteRequest = 1;
+		PutRequest = 2;
+	}
+
+	Type type = 1;
+	int32 num = 2;
+	bytes key = 3;
+	bytes value = 4;
+	bool tombstone = 5;
+}
+
+message Response {
+	int32 num = 1;
+	int64 rev = 2;
+}
+
+/*
+message PutRequest {
+	bytes key = 2;
+	bytes value = 3;
+	bool tombstone = 4;
+}
+
+message PutResponse {
+	int64 rev = 1;
+}
+
+message DeleteRequest {
+	bytes key = 1;
+}
+
+message DeleteResponse {
+	int64 rev = 1;
+}
+*/
+
+message GetRequest {
+	bytes key = 1;
+	int64 rev = 2;
+}
+
+
+message GetResponse {
+	bytes value = 1;
+	repeated int64 revs = 2;
+	int64 rev = 3;
+}
+
+message RangeRequest {
+	bytes from = 1;
+	bytes to = 2;
+	int64 rev = 3;
+}
+
+message RangeResponse {
+	bytes key = 1;
+	repeated int64 revs = 2;
+	bytes value = 3;
+	int64 rev = 4;
+}
