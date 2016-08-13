@@ -1,5 +1,6 @@
 syntax = "proto3";
-package pb;
+package azmo;
+option go_package = "pb";
 
 service DB {
 	rpc Range(RangeRequest) returns (stream RangeResponse);
