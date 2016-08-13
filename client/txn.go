@@ -105,6 +105,13 @@ func (r TxnResult) Num() int32 {
 	return r.m.Num
 }
 
+func (r TxnResult) Revisions() []int64 {
+	if r.key == nil || r.m == nil {
+		return nil
+	}
+	return r.m.Revs
+}
+
 func (r TxnResult) Revision() int64 {
 	if r.key == nil || r.m == nil {
 		return 0

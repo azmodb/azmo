@@ -38,6 +38,7 @@ func (c rangeCmd) Run(ctx context.Context, db *client.DB, args []string) error {
 	return nil
 }
 
-func (c rangeCmd) Name() string { return "range" }
-func (c rangeCmd) Args() string { return "from to [rev]" }
-func (c rangeCmd) Help() string { return "TODO" }
+func (c rangeCmd) Name() string      { return "range" }
+func (c rangeCmd) Args() string      { return "from to [rev]" }
+func (c rangeCmd) ShortHelp() string { return "range the values for the given range at rev" }
+func (c rangeCmd) Help() string      { return "TODO" }

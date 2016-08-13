@@ -23,7 +23,6 @@ func copyDir(ctx context.Context, db *client.DB, key []byte, root string) error 
 		if info.IsDir() {
 			return nil
 		}
-		fmt.Println(path)
 
 		value, err := ioutil.ReadFile(path)
 		if err != nil {
@@ -43,8 +42,8 @@ func copyDir(ctx context.Context, db *client.DB, key []byte, root string) error 
 	}
 
 	for _, res := range result {
-		fmt.Printf("copy dir: key:%q txnid:%d revision:%d\n",
-			res.Key(), res.Num(), res.Revision())
+		fmt.Printf("copy dir: key:%q txnid:%d revisions:%v revision:%d\n",
+			res.Key(), res.Num(), res.Revisions(), res.Revision())
 	}
 	return err
 }
@@ -74,17 +73,19 @@ func (c copyCmd) Run(ctx context.Context, db *client.DB, args []string) error {
 	if err != nil {
 		return err
 	}
-	rev, err := db.Put(ctx, key, value)
+	res, err := db.Put(ctx, key, value)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("copy key:%q revision:%d\n", key, rev)
+	fmt.Printf("copy key:%q revisions:%v revision:%d\n",
+		key, res.Revisions(), res.Revision())
 	return nil
 }
 
-func (c copyCmd) Name() string { return "copy" }
-func (c copyCmd) Args() string { return "key path" }
-func (c copyCmd) Help() string { return "TODO" }
+func (c copyCmd) Name() string      { return "copy" }
+func (c copyCmd) Args() string      { return "key path" }
+func (c copyCmd) ShortHelp() string { return "copy the content for the given key" }
+func (c copyCmd) Help() string      { return "TODO" }
 
 type putCmd struct{}
 
@@ -94,17 +95,19 @@ func (c putCmd) Run(ctx context.Context, db *client.DB, args []string) error {
 	}
 
 	key, value := []byte(args[0]), []byte(args[1])
-	rev, err := db.Put(ctx, key, value)
+	res, err := db.Put(ctx, key, value)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("put key:%q revision:%d\n", key, rev)
+	fmt.Printf("put key:%q revisions:%v revision:%d\n",
+		key, res.Revisions(), res.Revision())
 	return nil
 }
 
-func (c putCmd) Name() string { return "put" }
-func (c putCmd) Args() string { return "key value" }
-func (c putCmd) Help() string { return "TODO" }
+func (c putCmd) Name() string      { return "put" }
+func (c putCmd) Args() string      { return "key value" }
+func (c putCmd) ShortHelp() string { return "put the value of the given key" }
+func (c putCmd) Help() string      { return "TODO" }
 
 type insertCmd struct{}
 
@@ -114,14 +117,16 @@ func (c insertCmd) Run(ctx context.Context, db *client.DB, args []string) error 
 	}
 
 	key, value := []byte(args[0]), []byte(args[1])
-	rev, err := db.Insert(ctx, key, value)
+	res, err := db.Insert(ctx, key, value)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("insert key:%q revision:%d\n", key, rev)
+	fmt.Printf("insert key:%q revisions:%v revision:%d\n",
+		key, res.Revisions(), res.Revision())
 	return nil
 }
 
-func (c insertCmd) Name() string { return "insert" }
-func (c insertCmd) Args() string { return "key value" }
-func (c insertCmd) Help() string { return "TODO" }
+func (c insertCmd) Name() string      { return "insert" }
+func (c insertCmd) Args() string      { return "key value" }
+func (c insertCmd) ShortHelp() string { return "insert the value for the given key" }
+func (c insertCmd) Help() string      { return "TODO" }

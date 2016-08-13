@@ -34,6 +34,7 @@ func (c getCmd) Run(ctx context.Context, db *client.DB, args []string) (err erro
 	return err
 }
 
-func (c getCmd) Name() string { return "get" }
-func (c getCmd) Args() string { return "key [rev]" }
-func (c getCmd) Help() string { return "TODO" }
+func (c getCmd) Name() string      { return "get" }
+func (c getCmd) Args() string      { return "key [rev]" }
+func (c getCmd) ShortHelp() string { return "get the value for the given key at rev" }
+func (c getCmd) Help() string      { return "TODO" }

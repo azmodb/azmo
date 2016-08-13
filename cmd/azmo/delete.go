@@ -16,14 +16,15 @@ func (c deleteCmd) Run(ctx context.Context, db *client.DB, args []string) error 
 	}
 
 	key := []byte(args[0])
-	rev, err := db.Delete(ctx, key)
+	res, err := db.Delete(ctx, key)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("delete key:%q revision:%d\n", key, rev)
+	fmt.Printf("delete key:%q revisions:%v revision:%d\n", key, res.Revisions(), res.Revision())
 	return nil
 }
 
-func (c deleteCmd) Name() string { return "delete" }
-func (c deleteCmd) Args() string { return "key" }
-func (c deleteCmd) Help() string { return "TODO" }
+func (c deleteCmd) Name() string      { return "delete" }
+func (c deleteCmd) Args() string      { return "key" }
+func (c deleteCmd) ShortHelp() string { return "deletes the value for the given key" }
+func (c deleteCmd) Help() string      { return "TODO" }

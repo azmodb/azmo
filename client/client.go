@@ -15,10 +15,15 @@ type DB struct {
 	c    pb.DBClient
 }
 
-type Option func()
+type Option func(*DB) error
 
 func Dial(address string, timeout time.Duration, options ...Option) (*DB, error) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	opts := []grpc.DialOption{grpc.WithInsecure()}
+	if timeout > 0 {
+		opts = append(opts, grpc.WithTimeout(timeout))
+	}
+
+	conn, err := grpc.Dial(address, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -127,28 +132,55 @@ func (db *DB) Range(ctx context.Context, r Range, rev int64) ([]Pair, error) {
 	return pairs, nil
 }
 
-func (db *DB) Insert(ctx context.Context, key, value []byte) (int64, error) {
+type Result struct {
+	m   interface{}
+	key []byte
+}
+
+func (r Result) Key() []byte { return r.key }
+
+func (r Result) Revisions() []int64 {
+	if m, ok := r.m.(*pb.DeleteResponse); ok {
+		return m.Revs
+	}
+	if m, ok := r.m.(*pb.PutResponse); ok {
+		return m.Revs
+	}
+	panic("txn result message type mismatch")
+}
+
+func (r Result) Revision() int64 {
+	if m, ok := r.m.(*pb.DeleteResponse); ok {
+		return m.Rev
+	}
+	if m, ok := r.m.(*pb.PutResponse); ok {
+		return m.Rev
+	}
+	panic("txn result message type mismatch")
+}
+
+func (db *DB) Insert(ctx context.Context, key, value []byte) (Result, error) {
 	resp, err := db.c.Put(ctx, &pb.PutRequest{Key: key, Value: value, Tombstone: true})
 	if err != nil {
-		return 0, err
+		return Result{}, err
 	}
-	return resp.Rev, nil
+	return Result{key: key, m: resp}, nil
 }
 
-func (db *DB) Put(ctx context.Context, key, value []byte) (int64, error) {
+func (db *DB) Put(ctx context.Context, key, value []byte) (Result, error) {
 	resp, err := db.c.Put(ctx, &pb.PutRequest{Key: key, Value: value})
 	if err != nil {
-		return 0, err
+		return Result{}, err
 	}
-	return resp.Rev, nil
+	return Result{key: key, m: resp}, nil
 }
 
-func (db *DB) Delete(ctx context.Context, key []byte) (int64, error) {
+func (db *DB) Delete(ctx context.Context, key []byte) (Result, error) {
 	resp, err := db.c.Delete(ctx, &pb.DeleteRequest{Key: key})
 	if err != nil {
-		return 0, err
+		return Result{}, err
 	}
-	return resp.Rev, nil
+	return Result{key: key, m: resp}, nil
 }
 
 func (db *DB) Txn(ctx context.Context, batch *TxnBatch) ([]TxnResult, error) {
