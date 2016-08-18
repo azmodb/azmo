@@ -16,6 +16,10 @@ type copyCmd struct{}
 func copyDir(ctx context.Context, db *client.DB, key []byte, root string) error {
 	batch := client.NewTxnBatch()
 
+	prefix := ""
+	if len(key) > 0 {
+		prefix = string(key)
+	}
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -29,7 +33,7 @@ func copyDir(ctx context.Context, db *client.DB, key []byte, root string) error 
 			return err
 		}
 
-		batch.Put([]byte(path), value)
+		batch.Put([]byte(filepath.Join(prefix, path)), value)
 		return nil
 	})
 	if err != nil {
@@ -49,11 +53,18 @@ func copyDir(ctx context.Context, db *client.DB, key []byte, root string) error 
 }
 
 func (c copyCmd) Run(ctx context.Context, db *client.DB, args []string) error {
-	if len(args) < 2 {
-		return errors.New("copy: requires 2 arguments")
+	if len(args) < 1 {
+		return errors.New("copy: requires at least 1 argument")
 	}
 
-	key, path := []byte(filepath.Clean(args[0])), filepath.Clean(args[1])
+	var key []byte
+	var path string
+	switch len(args) {
+	case 1:
+		path = filepath.Clean(args[0])
+	case 2:
+		key, path = []byte(filepath.Clean(args[0])), filepath.Clean(args[1])
+	}
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -67,6 +78,10 @@ func (c copyCmd) Run(ctx context.Context, db *client.DB, args []string) error {
 	}
 	if fi.IsDir() {
 		return copyDir(ctx, db, key, path)
+	}
+
+	if len(args) != 2 {
+		return errors.New("copy: requires key and path argument")
 	}
 
 	value, err := ioutil.ReadAll(f)

@@ -19,6 +19,10 @@ type server struct {
 func (s *server) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.DeleteResponse, error) {
 	s.trace("DELETE %s", req)
 
+	if err := req.Verify(); err != nil {
+		return nil, err
+	}
+
 	resp := &pb.DeleteResponse{}
 	txn := s.db.Txn()
 	resp.Revs, resp.Rev = txn.Delete(req.Key)
@@ -30,6 +34,10 @@ func (s *server) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.DeleteR
 
 func (s *server) Put(ctx context.Context, req *pb.PutRequest) (*pb.PutResponse, error) {
 	s.trace("PUT %s", req)
+
+	if err := req.Verify(); err != nil {
+		return nil, err
+	}
 
 	resp := &pb.PutResponse{}
 	txn := s.db.Txn()
@@ -43,8 +51,8 @@ func (s *server) Put(ctx context.Context, req *pb.PutRequest) (*pb.PutResponse, 
 func (s *server) Txn(ctx context.Context, req *pb.TxnRequest) (*pb.TxnResponse, error) {
 	s.trace("TXN %s", req)
 
-	if len(req.Requests) == 0 {
-		return nil, fmt.Errorf("txn requires at least 1 generic request")
+	if err := req.Verify(); err != nil {
+		return nil, err
 	}
 
 	resp := &pb.TxnResponse{
@@ -54,20 +62,12 @@ func (s *server) Txn(ctx context.Context, req *pb.TxnRequest) (*pb.TxnResponse, 
 
 	txn := s.db.Txn()
 	for _, r := range req.Requests {
-		if r.Num <= 0 {
-			txn.Rollback()
-			return nil, fmt.Errorf("invalid txnid %d", r.Num)
-		}
-
 		t := &pb.GenericResponse{Num: r.Num}
 		switch r.Type {
 		case pb.GenericRequest_PutRequest:
 			t.Revs, t.Rev = txn.Put(r.Key, r.Value, r.Tombstone)
 		case pb.GenericRequest_DeleteRequest:
 			t.Revs, t.Rev = txn.Delete(r.Key)
-		default:
-			txn.Rollback()
-			return nil, fmt.Errorf("invalid request type %d", r.Type)
 		}
 		resp.Responses = append(resp.Responses, t)
 	}
@@ -84,6 +84,10 @@ func (s *server) Txn(ctx context.Context, req *pb.TxnRequest) (*pb.TxnResponse, 
 func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, error) {
 	s.trace("GET %s", req)
 
+	if err := req.Verify(); err != nil {
+		return nil, err
+	}
+
 	resp := &pb.GetResponse{}
 	resp.Value, resp.Revs, resp.Rev = s.db.Get(req.Key, req.Rev)
 
@@ -93,6 +97,10 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
 
 func (s *server) Range(req *pb.RangeRequest, srv pb.DB_RangeServer) (err error) {
 	s.trace("RANGE %s", req)
+
+	if err = req.Verify(); err != nil {
+		return err
+	}
 
 	resp := &pb.RangeResponse{}
 	s.db.Range(req.From, req.To, req.Rev, func(k, v []byte, revs []int64, rev int64) bool {
