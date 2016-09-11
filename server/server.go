@@ -1,8 +1,6 @@
 package server
 
 import (
-	"fmt"
-	"log"
 	"net"
 
 	"github.com/azmodb/azmo/pb"
@@ -12,133 +10,68 @@ import (
 )
 
 type server struct {
-	logger *log.Logger
-	db     *db.DB
+	db *db.DB
 }
 
-func (s *server) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.DeleteResponse, error) {
-	s.trace("DELETE %s", req)
-
-	if err := req.Verify(); err != nil {
+func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.Event, error) {
+	rec, err := s.db.Get(req.Key, req.Rev, req.Versions)
+	if err != nil {
+		rec.Close()
 		return nil, err
 	}
 
-	resp := &pb.DeleteResponse{}
-	txn := s.db.Txn()
-	resp.Revs, resp.Rev = txn.Delete(req.Key)
-	txn.Commit()
-
-	s.end("DELETE %s", resp)
-	return resp, nil
+	ev := &pb.Event{Record: rec.Record, Duration: 0}
+	return ev, nil
 }
 
-func (s *server) Put(ctx context.Context, req *pb.PutRequest) (*pb.PutResponse, error) {
-	s.trace("PUT %s", req)
+func (s *server) Batch(req *pb.BatchRequest, srv pb.DB_BatchServer) (err error) {
+	batch := s.db.Next()
+	ev := &pb.Event{}
 
-	if err := req.Verify(); err != nil {
-		return nil, err
-	}
+	for _, arg := range req.GetArgs() {
+		var rec *db.Record
 
-	resp := &pb.PutResponse{}
-	txn := s.db.Txn()
-	resp.Revs, resp.Rev = txn.Put(req.Key, req.Value, req.Tombstone)
-	txn.Commit()
-
-	s.end("PUT %s", resp)
-	return resp, nil
-}
-
-func (s *server) Txn(ctx context.Context, req *pb.TxnRequest) (*pb.TxnResponse, error) {
-	s.trace("TXN %s", req)
-
-	if err := req.Verify(); err != nil {
-		return nil, err
-	}
-
-	resp := &pb.TxnResponse{
-		Responses: make([]*pb.GenericResponse, 0, len(req.Requests)),
-	}
-	defer s.end("TXN %s", resp)
-
-	txn := s.db.Txn()
-	for _, r := range req.Requests {
-		t := &pb.GenericResponse{Num: r.Num}
-		switch r.Type {
-		case pb.GenericRequest_PutRequest:
-			t.Revs, t.Rev = txn.Put(r.Key, r.Value, r.Tombstone)
-		case pb.GenericRequest_DeleteRequest:
-			t.Revs, t.Rev = txn.Delete(r.Key)
+		switch t := arg.Command.(type) {
+		case *pb.Argument_Put:
+			r := t.Put
+			if !r.Tombstone {
+				rec, err = batch.Insert(r.Key, r.Value, r.Prev)
+			} else {
+				rec, err = batch.Put(r.Key, r.Value, r.Prev)
+			}
+		case *pb.Argument_Delete:
+			r := t.Delete
+			rec, err = batch.Delete(r.Key, r.Prev)
+		case *pb.Argument_Increment:
+			r := t.Increment
+			rec, err = batch.Increment(r.Key, r.Value, r.Prev)
+		case *pb.Argument_Decrement:
+			r := t.Decrement
+			rec, err = batch.Decrement(r.Key, r.Value, r.Prev)
 		}
-		resp.Responses = append(resp.Responses, t)
-	}
-	if len(resp.Responses) != len(req.Requests) {
-		txn.Rollback()
-		return nil, fmt.Errorf("malformed responses length")
-	}
-	txn.Commit()
-
-	resp.Responses = resp.Responses[:len(req.Requests)]
-	return resp, nil
-}
-
-func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, error) {
-	s.trace("GET %s", req)
-
-	if err := req.Verify(); err != nil {
-		return nil, err
-	}
-
-	resp := &pb.GetResponse{}
-	resp.Value, resp.Revs, resp.Rev = s.db.Get(req.Key, req.Rev)
-
-	s.end("GET %s", resp)
-	return resp, nil
-}
-
-func (s *server) Range(req *pb.RangeRequest, srv pb.DB_RangeServer) (err error) {
-	s.trace("RANGE %s", req)
-
-	if err = req.Verify(); err != nil {
-		return err
-	}
-
-	resp := &pb.RangeResponse{}
-	s.db.Range(req.From, req.To, req.Rev, func(k, v []byte, revs []int64, rev int64) bool {
-		resp.Key = k
-		resp.Value = v
-		resp.Revs = revs
-		resp.Rev = rev
-		if err = srv.Send(resp); err != nil {
-			return true
+		if err != nil { // rec is already released
+			break
 		}
-		s.end("RANGE %s", resp)
-		return false
-	})
+
+		ev.Record = rec.Record
+		err = srv.Send(ev)
+		rec.Close()
+		if err != nil {
+			break
+		}
+	}
 	return err
 }
 
-func (s *server) trace(format string, args ...interface{}) {
-	if s.logger == nil {
-		return
-	}
-	s.logger.Printf("-> "+format, args...)
+func (s *server) Range(req *pb.RangeRequest, srv pb.DB_RangeServer) error {
+	return nil
 }
 
-func (s *server) end(format string, args ...interface{}) {
-	if s.logger == nil {
-		return
-	}
-	s.logger.Printf("<- "+format, args...)
+func (s *server) Watch(req *pb.WatchRequest, srv pb.DB_WatchServer) error {
+	return nil
 }
 
 type Option func(*server) error
-
-func WithLogger(logger *log.Logger) Option {
-	return func(s *server) error {
-		s.logger = logger
-		return nil
-	}
-}
 
 func Listen(listener net.Listener, options ...Option) error {
 	server := &server{db: db.New()}

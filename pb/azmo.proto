@@ -2,84 +2,66 @@ syntax = "proto3";
 package azmo;
 option go_package = "pb";
 
+import "github.com/azmodb/db/pb/db.proto";
+
 service DB {
-	rpc Range(RangeRequest) returns (stream RangeResponse);
-	rpc Get(GetRequest) returns (GetResponse);
-	
-	rpc Delete(DeleteRequest) returns (DeleteResponse);
-	rpc Put(PutRequest) returns (PutResponse);
-	rpc Txn(TxnRequest) returns (TxnResponse);
+	rpc Range(RangeRequest) returns (stream Event);
+	rpc Get(GetRequest) returns (Event);
+	rpc Watch(WatchRequest) returns (stream Event);
+
+	rpc Batch(BatchRequest) returns (stream Event);
 }
 
-message TxnRequest {
-	repeated GenericRequest requests = 1;
+message BatchRequest {
+	repeated Argument args = 1;
 }
 
-message TxnResponse {
-	repeated GenericResponse responses = 1;
-}
-
-message GenericRequest {
-	enum Type {
-		InvalidRequest = 0;
-		DeleteRequest = 1;
-		PutRequest = 2;
+message Argument {
+	oneof Command {
+		NumericRequest increment = 1;
+		NumericRequest decrement = 2;
+		DeleteRequest delete = 3;
+		PutRequest put = 4;
 	}
-
-	Type type = 1; // required field
-	int32 num = 2; // required field
-	bytes key = 3; // required field
-
-	bytes value = 4;    // put only
-	bool tombstone = 5; // put only
-}
-
-message GenericResponse {
-	int32 num = 1;
-	repeated int64 revs = 2;
-	int64 rev = 3;
-}
-
-message PutRequest {
-	bytes key = 2;
-	bytes value = 3;
-	bool tombstone = 4;
-}
-
-message PutResponse {
-	repeated int64 revs = 1;
-	int64 rev = 2;
 }
 
 message DeleteRequest {
 	bytes key = 1;
+	bool prev = 2;
 }
 
-message DeleteResponse {
-	repeated int64 revs = 1;
-	int64 rev = 2;
-}
-
-message GetRequest {
+message PutRequest {
 	bytes key = 1;
-	int64 rev = 2;
+	bytes value = 2;
+	bool prev = 3;
+	bool tombstone = 4;
 }
 
-message GetResponse {
-	bytes value = 1;
-	repeated int64 revs = 2;
-	int64 rev = 3;
+message NumericRequest {
+	bytes key = 1;
+	int64 value = 2;
+	bool prev = 3;
 }
 
 message RangeRequest {
 	bytes from = 1;
 	bytes to = 2;
 	int64 rev = 3;
+	bool versions = 4;
 }
 
-message RangeResponse {
+message GetRequest {
 	bytes key = 1;
-	repeated int64 revs = 2;
-	bytes value = 3;
-	int64 rev = 4;
+	int64 rev = 3;
+	bool versions = 4;
 }
+
+message WatchRequest {
+	bytes key = 1;
+}
+
+message Event {
+	db.Record record = 1;
+	int64 duration = 2;
+}
+
