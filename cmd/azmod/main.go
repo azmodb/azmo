@@ -7,16 +7,12 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"strings"
 
 	"github.com/azmodb/azmo/server"
 )
 
 func main() {
 	var (
-		debug = flag.Bool("debug", false, "print debug messages to standard output")
-		name  = flag.String("name", "", "debug messages prefix")
-
 		addr    = flag.String("addr", "localhost:7979", "network listen address")
 		network = flag.String("net", "tcp", "stream-oriented network")
 	)
@@ -37,15 +33,7 @@ func main() {
 
 	donec := make(chan error, 1)
 	go func(donec chan<- error) {
-		if *debug {
-			if len(*name) > 0 {
-				*name = strings.ToUpper(*name) + " "
-			}
-			logger := log.New(os.Stdout, *name, log.Ldate|log.Lmicroseconds)
-			donec <- server.Listen(listener, server.WithLogger(logger))
-		} else {
-			donec <- server.Listen(listener)
-		}
+		donec <- server.Listen(listener)
 		close(donec)
 	}(donec)
 
@@ -58,7 +46,9 @@ func main() {
 			log.Fatal(err)
 		}
 	case <-sigc:
+		os.Exit(9)
 	}
+	os.Exit(0)
 }
 
 const usageMsg = ``

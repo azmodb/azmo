@@ -1,17 +1,33 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/azmodb/azmo/client"
 	"golang.org/x/net/context"
 )
 
-type helpCmd struct{}
+const helpMsg = `
+Use "azmo help [command]" for more information about a command.
+`
 
-func (c helpCmd) Run(_ context.Context, _ *client.DB, args []string) error {
-	return nil
+var helpCmd = command{
+	Help:      helpMsg,
+	ShortHelp: "information about a command",
+	Name:      "help",
+	Args:      "[command]",
+	Run: func(_ context.Context, _ *client.DB, args []string) error {
+		if len(args) <= 0 {
+			fmt.Fprintln(stderr, helpMsg)
+			os.Exit(2)
+		}
+
+		cmd, found := commands[args[0]]
+		if !found {
+			return fmt.Errorf("command %q not found", args[0])
+		}
+		fmt.Println(cmd.Help)
+		return nil
+	},
 }
-
-func (c helpCmd) Name() string      { return "help" }
-func (c helpCmd) Args() string      { return "command" }
-func (c helpCmd) ShortHelp() string { return "TOOD" }
-func (c helpCmd) Help() string      { return "TODO" }

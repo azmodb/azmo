@@ -1,7 +1,10 @@
 package server
 
 import (
+	"errors"
+	"log"
 	"net"
+	"os"
 
 	"github.com/azmodb/azmo/pb"
 	"github.com/azmodb/db"
@@ -10,10 +13,12 @@ import (
 )
 
 type server struct {
-	db *db.DB
+	log *log.Logger
+	db  *db.DB
 }
 
 func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.Event, error) {
+	s.printf("-> %s", req)
 	rec, err := s.db.Get(req.Key, req.Rev, req.Versions)
 	if err != nil {
 		rec.Close()
@@ -21,6 +26,7 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.Event, error)
 	}
 
 	ev := &pb.Event{Record: rec.Record, Duration: 0}
+	s.printf("<- %s", ev)
 	return ev, nil
 }
 
@@ -48,17 +54,27 @@ func (s *server) Batch(req *pb.BatchRequest, srv pb.DB_BatchServer) (err error) 
 		case *pb.Argument_Decrement:
 			r := t.Decrement
 			rec, err = batch.Decrement(r.Key, r.Value, r.Prev)
+		default:
+			err = errors.New("unknown batch command")
 		}
 		if err != nil { // rec is already released
 			break
 		}
 
-		ev.Record = rec.Record
+		if rec != nil {
+			ev.Record = rec.Record
+		}
 		err = srv.Send(ev)
 		rec.Close()
 		if err != nil {
 			break
 		}
+	}
+
+	if err != nil {
+		batch.Rollback()
+	} else {
+		batch.Commit()
 	}
 	return err
 }
@@ -71,15 +87,23 @@ func (s *server) Watch(req *pb.WatchRequest, srv pb.DB_WatchServer) error {
 	return nil
 }
 
+func (s *server) printf(format string, args ...interface{}) {
+	if s.log != nil {
+		s.log.Printf(format, args...)
+	}
+}
+
 type Option func(*server) error
 
-func Listen(listener net.Listener, options ...Option) error {
+func Listen(listener net.Listener, opts ...Option) error {
 	server := &server{db: db.New()}
-	for _, opt := range options {
+	for _, opt := range opts {
 		if err := opt(server); err != nil {
 			return err
 		}
 	}
+
+	server.log = log.New(os.Stderr, "", 0)
 
 	s := grpc.NewServer()
 	pb.RegisterDBServer(s, server)

@@ -1,44 +1,60 @@
 package main
 
 import (
-	"errors"
+	"flag"
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/azmodb/azmo/client"
 	"golang.org/x/net/context"
 )
 
-type rangeCmd struct{}
+var (
+	getUsageMsg = `
+`
 
-func (c rangeCmd) Run(ctx context.Context, db *client.DB, args []string) error {
-	if len(args) < 2 {
-		return errors.New("range: requires at least 2 argument\n")
+	getCmd = command{
+		Help:      `TODO`,
+		ShortHelp: "TODO",
+		Name:      "get",
+		Args:      "[options] key [rev]",
+		Run: func(ctx context.Context, db *client.DB, args []string) (err error) {
+			set := flag.NewFlagSet("get", flag.ExitOnError)
+			set.Usage = func() {
+				fmt.Fprintf(stderr, "Usage: %s get [options] key [rev]\n", self)
+				fmt.Fprint(stderr, getUsageMsg)
+				fmt.Fprintf(stderr, "\nOptions:\n")
+				set.PrintDefaults()
+				os.Exit(2)
+			}
+
+			versions := set.Bool("versions", false, "result includes all revisions")
+			if err := set.Parse(args); err != nil {
+				return err
+			}
+			args = set.Args()
+			if len(args) <= 0 {
+				set.Usage()
+			}
+
+			var rev int64
+			if len(args) >= 2 {
+				rev, err = strconv.ParseInt(args[1], 10, 64)
+				if err != nil {
+					return err
+				}
+			}
+
+			r := client.NewRange([]byte(args[0]), nil, rev, *versions)
+			defer r.Close()
+
+			ev, err := db.Get(ctx, r)
+			if err != nil {
+				return err
+			}
+			fmt.Println(ev)
+			return nil
+		},
 	}
-
-	var err error
-	var rev int64
-	if len(args) >= 3 {
-		rev, err = strconv.ParseInt(args[2], 10, 64)
-		if err != nil {
-			return err
-		}
-	}
-
-	from, to := []byte(args[0]), []byte(args[1])
-	pairs, err := db.Range(ctx, client.NewRange(from, to), rev)
-	if err != nil {
-		return err
-	}
-
-	for _, pair := range pairs {
-		fmt.Printf("range key:%q revisions:%v revision:%d\n%s\n",
-			pair.Key(), pair.Revisions(), pair.Revision(), pair.Value())
-	}
-	return nil
-}
-
-func (c rangeCmd) Name() string      { return "range" }
-func (c rangeCmd) Args() string      { return "from to [rev]" }
-func (c rangeCmd) ShortHelp() string { return "range the values for the given range at rev" }
-func (c rangeCmd) Help() string      { return "TODO" }
+)
