@@ -12,11 +12,13 @@ import (
 
 var (
 	getUsageMsg = `
+Get retrieves the value for a key at revision rev. If rev <= 0 get
+returns the current value for a key.
 `
 
 	getCmd = command{
-		Help:      `TODO`,
-		ShortHelp: "TODO",
+		Help:      getUsageMsg,
+		ShortHelp: "retrieves the value for a key",
 		Name:      "get",
 		Args:      "[options] key [rev]",
 		Run: func(ctx context.Context, db *client.DB, args []string) (err error) {

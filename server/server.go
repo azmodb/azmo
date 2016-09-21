@@ -18,7 +18,7 @@ type server struct {
 }
 
 func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.Event, error) {
-	s.printf("-> %s", req)
+	s.printf("GET -> %s", req)
 	rec, err := s.db.Get(req.Key, req.Rev, req.Versions)
 	if err != nil {
 		rec.Close()
@@ -26,7 +26,7 @@ func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.Event, error)
 	}
 
 	ev := &pb.Event{Record: rec.Record, Duration: 0}
-	s.printf("<- %s", ev)
+	s.printf("GET <- %s", ev)
 	return ev, nil
 }
 
@@ -94,6 +94,13 @@ func (s *server) printf(format string, args ...interface{}) {
 }
 
 type Option func(*server) error
+
+func WithLogger(logger *log.Logger) Option {
+	return func(s *server) error {
+		s.log = logger
+		return nil
+	}
+}
 
 func Listen(listener net.Listener, opts ...Option) error {
 	server := &server{db: db.New()}
