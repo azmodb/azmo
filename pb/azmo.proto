@@ -62,6 +62,5 @@ message WatchRequest {
 
 message Event {
 	db.Record record = 1;
-	int64 duration = 2;
 }
 

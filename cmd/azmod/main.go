@@ -15,15 +15,18 @@ const logFlags = log.Ldate | log.Ltime | log.Lmicroseconds
 
 func main() {
 	var (
-		addr    = flag.String("addr", "localhost:7979", "network listen address")
-		network = flag.String("net", "tcp", "stream-oriented network")
-		debug   = flag.Bool("debug", false, "write debug messages to stderr")
+		addr     = flag.String("addr", "localhost:7979", "network listen address")
+		network  = flag.String("net", "tcp", "stream-oriented network")
+		certFile = flag.String("cert", "", "TLS cert file")
+		keyFile  = flag.String("key", "", "TLS key file")
+		debug    = flag.Bool("debug", false, "write debug messages to stderr")
 	)
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n", os.Args[0])
 		fmt.Fprint(os.Stderr, usageMsg)
-		fmt.Fprintf(os.Stderr, "\nOptions:\n")
+		fmt.Fprintf(os.Stderr, "\nOptions:\n\n")
 		flag.PrintDefaults()
+		fmt.Fprintln(os.Stderr)
 		os.Exit(2)
 	}
 	flag.Parse()
@@ -37,10 +40,10 @@ func main() {
 	donec := make(chan error, 1)
 	go func(donec chan<- error) {
 		if *debug {
-			logger := log.New(os.Stderr, "", logFlags)
-			donec <- server.Listen(listener, server.WithLogger(logger))
+			//logger := log.New(os.Stderr, "", logFlags)
+			//donec <- server.Listen(listener, server.WithLogger(logger))
 		} else {
-			donec <- server.Listen(listener)
+			donec <- server.Listen(listener, *certFile, *keyFile)
 		}
 		close(donec)
 	}(donec)
@@ -59,4 +62,8 @@ func main() {
 	os.Exit(0)
 }
 
-const usageMsg = ``
+const usageMsg = `
+AzmoDB is an immutable, consistent, in-memory key/value store. AzmoDB
+uses an immutable Left-Leaning Red-Black tree (LLRB) internally and
+supports snapshotting.
+`

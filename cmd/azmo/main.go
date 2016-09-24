@@ -8,7 +8,6 @@ import (
 	"os/signal"
 
 	"github.com/azmodb/azmo/client"
-
 	"golang.org/x/net/context"
 )
 
@@ -23,10 +22,11 @@ func usage() {
 	fmt.Fprintf(stderr, "Usage: %s [options] command [options][arguments]...\n",
 		self)
 	fmt.Fprint(stderr, usageMsg)
-	fmt.Fprintf(stderr, "\nOptions:\n")
+	fmt.Fprintf(stderr, "\nOptions:\n\n")
 	flag.PrintDefaults()
-	fmt.Fprintf(stderr, "\nCommands:\n")
+	fmt.Fprintf(stderr, "\nCommands:\n\n")
 	printDefaults()
+	fmt.Fprintf(stderr, "%s\n", helpMsg)
 	os.Exit(2)
 }
 
@@ -74,4 +74,6 @@ func main() {
 	}
 }
 
-const usageMsg = ``
+const usageMsg = `
+Azmo is a command line client for AzmoDB (https://github.com/azmodb/azmo).
+`

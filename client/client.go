@@ -158,20 +158,24 @@ func (db *DB) Range(ctx context.Context, r *Range) (<-chan *Event, error) {
 	}
 
 	ch := make(chan *Event, 32) // TODO: find ch capacity
-	for {
-		resp, err := stream.Recv()
-		if err != nil && err == io.EOF {
-			break
-		}
+	go func(ch chan<- *Event) {
+		defer close(ch)
 
-		ev := eventPool.Get().(*Event)
-		ev.Event = resp
-		ev.err = err
-		ch <- ev
-		if err != nil {
-			break
+		for {
+			resp, err := stream.Recv()
+			if err != nil && err == io.EOF {
+				break
+			}
+
+			ev := eventPool.Get().(*Event)
+			ev.Event = resp
+			ev.err = err
+			ch <- ev
+			if err != nil {
+				break
+			}
 		}
-	}
+	}(ch)
 	return ch, nil
 }
 

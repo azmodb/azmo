@@ -125,7 +125,7 @@ Dec decrements the value for a key.
 `
 
 	decrementCmd = command{
-		Help:      incrementUsageMsg,
+		Help:      decrementUsageMsg,
 		ShortHelp: "dec decrements the value for a key",
 		Name:      "dec",
 		Args:      "[options] key value",

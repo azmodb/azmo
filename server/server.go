@@ -5,12 +5,23 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
 
 	"github.com/azmodb/azmo/pb"
 	"github.com/azmodb/db"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
+
+var eventPool = sync.Pool{New: func() interface{} { return &pb.Event{} }}
+
+func getEvent() *pb.Event { return eventPool.Get().(*pb.Event) }
+
+func putEvent(ev *pb.Event) {
+	ev.Record = nil
+	eventPool.Put(ev)
+}
 
 type server struct {
 	log *log.Logger
@@ -18,21 +29,24 @@ type server struct {
 }
 
 func (s *server) Get(ctx context.Context, req *pb.GetRequest) (*pb.Event, error) {
-	s.printf("GET -> %s", req)
 	rec, err := s.db.Get(req.Key, req.Rev, req.Versions)
 	if err != nil {
 		rec.Close()
 		return nil, err
 	}
 
-	ev := &pb.Event{Record: rec.Record, Duration: 0}
-	s.printf("GET <- %s", ev)
+	ev := getEvent()
+	defer putEvent(ev)
+
+	ev.Record = rec.Record
+	rec.Close()
 	return ev, nil
 }
 
 func (s *server) Batch(req *pb.BatchRequest, srv pb.DB_BatchServer) (err error) {
 	batch := s.db.Next()
-	ev := &pb.Event{}
+	ev := getEvent()
+	defer putEvent(ev)
 
 	for _, arg := range req.GetArgs() {
 		var rec *db.Record
@@ -79,7 +93,42 @@ func (s *server) Batch(req *pb.BatchRequest, srv pb.DB_BatchServer) (err error) 
 	return err
 }
 
+func scan(key []byte, rec *db.Record, srv pb.DB_WatchServer) db.RangeFunc {
+	return func(key []byte, rec *db.Record) bool {
+		ev := getEvent()
+		defer func() {
+			putEvent(ev)
+			rec.Close()
+		}()
+
+		if rec != nil {
+			ev.Record = rec.Record
+		}
+		if err := srv.Send(ev); err != nil {
+			return true
+		}
+		return false
+	}
+}
+
 func (s *server) Range(req *pb.RangeRequest, srv pb.DB_RangeServer) error {
+	ev := getEvent()
+	defer putEvent(ev)
+
+	fn := func(key []byte, rec *db.Record) bool {
+		defer rec.Close()
+
+		ev.Record = nil
+		if rec != nil {
+			ev.Record = rec.Record
+		}
+		if err := srv.Send(ev); err != nil {
+			return true
+		}
+		return false
+	}
+
+	s.db.Range(req.From, req.To, req.Rev, req.Versions, fn)
 	return nil
 }
 
@@ -87,11 +136,11 @@ func (s *server) Watch(req *pb.WatchRequest, srv pb.DB_WatchServer) error {
 	return nil
 }
 
-func (s *server) printf(format string, args ...interface{}) {
-	if s.log != nil {
-		s.log.Printf(format, args...)
-	}
-}
+//func (s *server) printf(format string, args ...interface{}) {
+//	if s.log != nil {
+//		s.log.Printf(format, args...)
+//	}
+//}
 
 type Option func(*server) error
 
@@ -102,7 +151,9 @@ func WithLogger(logger *log.Logger) Option {
 	}
 }
 
-func Listen(listener net.Listener, opts ...Option) error {
+const logFlags = log.Ldate | log.Ltime | log.Lmicroseconds
+
+func Listen(listener net.Listener, cert, key string, opts ...Option) error {
 	server := &server{db: db.New()}
 	for _, opt := range opts {
 		if err := opt(server); err != nil {
@@ -110,9 +161,18 @@ func Listen(listener net.Listener, opts ...Option) error {
 		}
 	}
 
-	server.log = log.New(os.Stderr, "", 0)
+	var options []grpc.ServerOption
+	if cert != "" && key != "" {
+		creds, err := credentials.NewServerTLSFromFile(cert, key)
+		if err != nil {
+			return err
+		}
+		options = []grpc.ServerOption{grpc.Creds(creds)}
+	}
 
-	s := grpc.NewServer()
+	server.log = log.New(os.Stderr, "", logFlags)
+
+	s := grpc.NewServer(options...)
 	pb.RegisterDBServer(s, server)
 	return s.Serve(listener)
 }
