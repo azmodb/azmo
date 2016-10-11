@@ -15,6 +15,7 @@ type server struct {
 	db *db.DB
 }
 
+/*
 func (s *server) Decrement(ctx context.Context, req *pb.DecrementRequest) (*pb.Event, error) {
 	ev := &pb.Event{}
 	tx := s.db.Txn()
@@ -66,6 +67,7 @@ func (s *server) increment(tx *db.Txn, req *pb.IncrementRequest, ev *pb.Event) e
 	ev.Init(pb.Decrement, req.Key, nil, created, created)
 	return nil
 }
+*/
 
 func (s *server) Put(ctx context.Context, req *pb.PutRequest) (*pb.Event, error) {
 	ev := &pb.Event{}
@@ -111,10 +113,10 @@ func (s *server) Batch(req *pb.BatchRequest, srv pb.DB_BatchServer) (err error) 
 	tx := s.db.Txn()
 	for _, arg := range req.Arguments {
 		switch t := arg.Command.(type) {
-		case *pb.Argument_Decrement:
-			err = s.decrement(tx, t.Decrement, ev)
-		case *pb.Argument_Increment:
-			err = s.increment(tx, t.Increment, ev)
+		//case *pb.Argument_Decrement:
+		//	err = s.decrement(tx, t.Decrement, ev)
+		//case *pb.Argument_Increment:
+		//	err = s.increment(tx, t.Increment, ev)
 		case *pb.Argument_Put:
 			err = s.put(tx, t.Put, ev)
 		case *pb.Argument_Delete:

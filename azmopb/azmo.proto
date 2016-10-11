@@ -3,8 +3,8 @@ package db;
 option go_package = "azmopb";
 
 service DB {
-	rpc Decrement(DecrementRequest) returns (Event);
-	rpc Increment(IncrementRequest) returns (Event);
+	//rpc Decrement(DecrementRequest) returns (Event);
+	//rpc Increment(IncrementRequest) returns (Event);
 	rpc Put(PutRequest) returns (Event);
 	rpc Delete(DeleteRequest) returns (Event);
 	
@@ -21,13 +21,14 @@ message BatchRequest {
 
 message Argument {
 	oneof Command {
-		DecrementRequest decrement = 1;
-		IncrementRequest increment = 2;
+		//DecrementRequest decrement = 1;
+		//IncrementRequest increment = 2;
 		PutRequest put = 3;
 		DeleteRequest delete = 4;
 	}
 }
 
+/*
 message DecrementRequest {
 	bytes key = 1;
 	int64 value = 2;
@@ -39,6 +40,7 @@ message IncrementRequest {
 	int64 value = 2;
 	bool tombstone = 3;
 }
+*/
 
 message PutRequest {
 	bytes key = 1;

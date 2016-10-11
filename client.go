@@ -68,6 +68,16 @@ func (c *Client) Batch(ctx context.Context, w io.Writer, r *pb.BatchRequest) err
 	return nil
 }
 
+func (c *Client) Delete(ctx context.Context, w io.Writer, r *pb.DeleteRequest) error {
+	resp, err := c.db.Delete(ctx, r)
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintln(w, resp)
+	return err
+}
+
 func (c *Client) Put(ctx context.Context, w io.Writer, r *pb.PutRequest) error {
 	resp, err := c.db.Put(ctx, r)
 	if err != nil {
@@ -110,5 +120,22 @@ func (c *Client) Get(ctx context.Context, w io.Writer, r *pb.GetRequest) error {
 }
 
 func (c *Client) Watch(ctx context.Context, w io.Writer, r *pb.WatchRequest) error {
+	stream, err := c.db.Watch(ctx, r)
+	if err != nil {
+		return err
+	}
+
+	for {
+		resp, err := stream.Recv()
+		if err != nil && err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if _, err = fmt.Fprintln(w, resp); err != nil {
+			return err
+		}
+	}
 	return nil
 }
