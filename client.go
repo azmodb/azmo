@@ -2,7 +2,6 @@ package azmo
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"time"
 
@@ -12,6 +11,10 @@ import (
 )
 
 type ClientOption func(*Client) error
+
+type Encoder interface {
+	Encode(ev *pb.Event) error
+}
 
 type Client struct {
 	conn *grpc.ClientConn
@@ -47,7 +50,7 @@ func (c *Client) Close() error {
 	return err
 }
 
-func (c *Client) Batch(ctx context.Context, w io.Writer, r *pb.BatchRequest) error {
+func (c *Client) Batch(ctx context.Context, e Encoder, r *pb.BatchRequest) error {
 	stream, err := c.db.Batch(ctx, r)
 	if err != nil {
 		return err
@@ -61,34 +64,38 @@ func (c *Client) Batch(ctx context.Context, w io.Writer, r *pb.BatchRequest) err
 		if err != nil {
 			return err
 		}
-		if _, err = fmt.Fprintln(w, resp); err != nil {
+		if err = e.Encode(resp); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (c *Client) Delete(ctx context.Context, w io.Writer, r *pb.DeleteRequest) error {
+func (c *Client) Delete(ctx context.Context, e Encoder, r *pb.DeleteRequest) error {
 	resp, err := c.db.Delete(ctx, r)
 	if err != nil {
 		return err
 	}
-
-	_, err = fmt.Fprintln(w, resp)
-	return err
+	return e.Encode(resp)
 }
 
-func (c *Client) Put(ctx context.Context, w io.Writer, r *pb.PutRequest) error {
+func (c *Client) Dec(ctx context.Context, e Encoder, r *pb.DecrementRequest) error {
+	return nil
+}
+
+func (c *Client) Inc(ctx context.Context, e Encoder, r *pb.IncrementRequest) error {
+	return nil
+}
+
+func (c *Client) Put(ctx context.Context, e Encoder, r *pb.PutRequest) error {
 	resp, err := c.db.Put(ctx, r)
 	if err != nil {
 		return err
 	}
-
-	_, err = fmt.Fprintln(w, resp)
-	return err
+	return e.Encode(resp)
 }
 
-func (c *Client) Range(ctx context.Context, w io.Writer, r *pb.RangeRequest) error {
+func (c *Client) Range(ctx context.Context, e Encoder, r *pb.RangeRequest) error {
 	stream, err := c.db.Range(ctx, r)
 	if err != nil {
 		return err
@@ -102,24 +109,22 @@ func (c *Client) Range(ctx context.Context, w io.Writer, r *pb.RangeRequest) err
 		if err != nil {
 			return err
 		}
-		if _, err = fmt.Fprintln(w, resp); err != nil {
+		if err = e.Encode(resp); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (c *Client) Get(ctx context.Context, w io.Writer, r *pb.GetRequest) error {
+func (c *Client) Get(ctx context.Context, e Encoder, r *pb.GetRequest) error {
 	resp, err := c.db.Get(ctx, r)
 	if err != nil {
 		return err
 	}
-
-	_, err = fmt.Fprintln(w, resp)
-	return err
+	return e.Encode(resp)
 }
 
-func (c *Client) Watch(ctx context.Context, w io.Writer, r *pb.WatchRequest) error {
+func (c *Client) Watch(ctx context.Context, e Encoder, r *pb.WatchRequest) error {
 	stream, err := c.db.Watch(ctx, r)
 	if err != nil {
 		return err
@@ -133,7 +138,7 @@ func (c *Client) Watch(ctx context.Context, w io.Writer, r *pb.WatchRequest) err
 		if err != nil {
 			return err
 		}
-		if _, err = fmt.Fprintln(w, resp); err != nil {
+		if err = e.Encode(resp); err != nil {
 			return err
 		}
 	}

@@ -3,6 +3,7 @@ package azmo
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"testing"
@@ -37,6 +38,15 @@ func init() {
 	listener = l
 }
 
+type fmtEncoder struct {
+	w io.Writer
+}
+
+func (e fmtEncoder) Encode(ev *pb.Event) error {
+	_, err := fmt.Fprintln(e.w, ev)
+	return err
+}
+
 func TestBasicServerClient(t *testing.T) {
 	c, err := Dial(defaultTestServerAddress, 0)
 	if err != nil {
@@ -44,7 +54,8 @@ func TestBasicServerClient(t *testing.T) {
 	}
 	defer c.Close()
 
-	err = c.Put(context.TODO(), os.Stdout, &pb.PutRequest{
+	e := fmtEncoder{w: os.Stdout}
+	err = c.Put(context.TODO(), e, &pb.PutRequest{
 		Key:   []byte("k1"),
 		Value: []byte("v1"),
 	})
@@ -52,7 +63,7 @@ func TestBasicServerClient(t *testing.T) {
 		t.Fatalf("put k1: %v", err)
 	}
 
-	err = c.Get(context.TODO(), os.Stdout, &pb.GetRequest{
+	err = c.Get(context.TODO(), e, &pb.GetRequest{
 		Key:       []byte("k1"),
 		Revision:  0,
 		MustEqual: false,
