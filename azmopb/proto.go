@@ -30,3 +30,49 @@ func (m *Event) Init(t Event_Type, key []byte, data interface{}, created, curren
 		m.Numeric = t
 	}
 }
+
+func (m *BatchRequest) Decrement(key []byte, value int64, tombstone bool) {
+	m.Arguments = append(m.Arguments, &Argument{
+		&Argument_Decrement{
+			&DecrementRequest{
+				Key:       key,
+				Value:     value,
+				Tombstone: tombstone,
+			},
+		},
+	})
+}
+
+func (m *BatchRequest) Increment(key []byte, value int64, tombstone bool) {
+	m.Arguments = append(m.Arguments, &Argument{
+		&Argument_Increment{
+			&IncrementRequest{
+				Key:       key,
+				Value:     value,
+				Tombstone: tombstone,
+			},
+		},
+	})
+}
+
+func (m *BatchRequest) Put(key []byte, value []byte, tombstone bool) {
+	m.Arguments = append(m.Arguments, &Argument{
+		&Argument_Put{
+			&PutRequest{
+				Key:       key,
+				Value:     value,
+				Tombstone: tombstone,
+			},
+		},
+	})
+}
+
+func (m *BatchRequest) Delete(key []byte) {
+	m.Arguments = append(m.Arguments, &Argument{
+		&Argument_Delete{
+			&DeleteRequest{
+				Key: key,
+			},
+		},
+	})
+}
