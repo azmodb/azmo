@@ -32,10 +32,10 @@ func Dial(address string, timeout time.Duration, opts ...ClientOption) (*Client,
 	if err != nil {
 		return nil, err
 	}
-	return newClient(conn), nil
+	return NewClient(conn), nil
 }
 
-func newClient(conn *grpc.ClientConn) *Client {
+func NewClient(conn *grpc.ClientConn) *Client {
 	return &Client{db: pb.NewDBClient(conn), conn: conn}
 }
 
@@ -80,11 +80,19 @@ func (c *Client) Delete(ctx context.Context, e Encoder, r *pb.DeleteRequest) err
 }
 
 func (c *Client) Dec(ctx context.Context, e Encoder, r *pb.DecrementRequest) error {
-	return nil
+	resp, err := c.db.Decrement(ctx, r)
+	if err != nil {
+		return err
+	}
+	return e.Encode(resp)
 }
 
 func (c *Client) Inc(ctx context.Context, e Encoder, r *pb.IncrementRequest) error {
-	return nil
+	resp, err := c.db.Increment(ctx, r)
+	if err != nil {
+		return err
+	}
+	return e.Encode(resp)
 }
 
 func (c *Client) Put(ctx context.Context, e Encoder, r *pb.PutRequest) error {
