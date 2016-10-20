@@ -7,10 +7,15 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"runtime"
+	"text/tabwriter"
+	"time"
 
 	"github.com/azmodb/azmo"
 	"github.com/azmodb/db"
 )
+
+var azmoVersion = fmt.Sprintf("alpha %s/%s %s", runtime.GOOS, runtime.GOARCH, time.Now())
 
 const logFlags = log.Ldate | log.Ltime | log.Lmicroseconds
 
@@ -31,6 +36,13 @@ func main() {
 		os.Exit(2)
 	}
 	flag.Parse()
+
+	if flag.NArg() == 1 && flag.Arg(0) == "version" {
+		version()
+		os.Exit(0)
+	}
+
+	fmt.Fprintf(os.Stdout, "AzmoDB Version:\t%s\n", azmoVersion)
 
 	listener, err := net.Listen(*network, *addr)
 	if err != nil {
@@ -65,8 +77,19 @@ func main() {
 	os.Exit(0)
 }
 
+func version() {
+	tw := tabwriter.NewWriter(os.Stdout, 0, 8, 0, '\t', 0)
+	fmt.Fprintf(tw, "AzmoDB Version:\t%s\n", azmoVersion)
+	fmt.Fprintf(tw, "ARCH:\t%s\n", runtime.GOARCH)
+	fmt.Fprintf(tw, "OS:\t%s\n", runtime.GOOS)
+	tw.Flush()
+}
+
 const usageMsg = `
 AzmoDB is an immutable, consistent, in-memory key/value store. AzmoDB
 uses an immutable Left-Leaning Red-Black tree (LLRB) internally and
 supports snapshotting.
+
+The database provides Atomicity, Consistency and Isolation from ACID.
+Being that it is in-memory, it does not provide durability.
 `
