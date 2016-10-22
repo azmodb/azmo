@@ -2,13 +2,15 @@ package azmo
 
 import (
 	"bytes"
-	"context"
 	"fmt"
+	"io"
 	"net"
+	"os"
 	"testing"
 
 	pb "github.com/azmodb/azmo/azmopb"
 	"github.com/azmodb/db"
+	"golang.org/x/net/context"
 )
 
 const defaultTestServerAddress = "localhost:7979"
@@ -37,7 +39,6 @@ func init() {
 	listener = l
 }
 
-/*
 type fmtEncoder struct {
 	w io.Writer
 }
@@ -46,7 +47,12 @@ func (e fmtEncoder) Encode(ev *pb.Event) error {
 	_, err := fmt.Fprintln(e.w, ev)
 	return err
 }
-*/
+
+type noopEncoder struct{}
+
+func (e noopEncoder) Encode(ev *pb.Event) error {
+	return nil
+}
 
 type testEncoder struct {
 	typ     pb.Event_Type
@@ -99,5 +105,39 @@ func TestPutGet(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("get k1: %v", err)
+	}
+}
+
+func TestRange(t *testing.T) {
+	c, err := Dial(defaultTestServerAddress, 0)
+	if err != nil {
+		t.Fatalf("cannot dial server: %v", err)
+	}
+	defer c.Close()
+
+	noop := noopEncoder{}
+	count := 10
+	for i := 0; i < count; i++ {
+		key := []byte(fmt.Sprintf("range_test_key:%.4d", i))
+		err = c.Put(context.TODO(), noop, &pb.PutRequest{
+			Key:   key,
+			Value: []byte("v1"),
+		})
+		if err != nil {
+			t.Fatalf("put %s: %v", key, err)
+		}
+	}
+
+	enc := fmtEncoder{os.Stdout}
+	from := []byte("range_test_key:0000")
+	to := []byte(fmt.Sprintf("range_test_key:%.4d", count))
+	err = c.Range(context.TODO(), enc, &pb.RangeRequest{
+		From:     from,
+		To:       to,
+		Revision: 0,
+		Limit:    0,
+	})
+	if err != nil {
+		t.Fatalf("range: %v", err)
 	}
 }

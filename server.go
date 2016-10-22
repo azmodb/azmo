@@ -145,9 +145,18 @@ func (s *server) Range(req *pb.RangeRequest, srv pb.DB_RangeServer) error {
 	if err != nil {
 		return err
 	}
-	ev := &pb.Event{}
+	defer n.Cancel()
 
+	ev := &pb.Event{}
 	for e := range n.Recv() {
+		evErr := e.Err()
+		if evErr != nil && evErr == db.NotifierCanceled {
+			return nil
+		}
+		if evErr != nil {
+			return evErr
+		}
+
 		ev.Init(pb.Range, e.Key, e.Data, e.Created, e.Current)
 		if err = srv.Send(ev); err != nil {
 			return err
@@ -161,9 +170,18 @@ func (s *server) Watch(req *pb.WatchRequest, srv pb.DB_WatchServer) error {
 	if err != nil {
 		return err
 	}
-	ev := &pb.Event{}
+	defer n.Cancel()
 
+	ev := &pb.Event{}
 	for e := range n.Recv() {
+		evErr := e.Err()
+		if evErr != nil && evErr == db.NotifierCanceled {
+			return nil
+		}
+		if evErr != nil {
+			return evErr
+		}
+
 		ev.Init(pb.Watch, e.Key, e.Data, e.Created, e.Current)
 		if err = srv.Send(ev); err != nil {
 			return err
