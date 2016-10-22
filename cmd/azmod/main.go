@@ -17,8 +17,6 @@ import (
 
 var azmoVersion = fmt.Sprintf("alpha %s/%s %s", runtime.GOOS, runtime.GOARCH, time.Now())
 
-const logFlags = log.Ldate | log.Ltime | log.Lmicroseconds
-
 func main() {
 	var (
 		addr     = flag.String("addr", "localhost:7979", "network listen address")
@@ -28,7 +26,7 @@ func main() {
 		debug    = flag.Bool("debug", false, "write debug messages to stderr")
 	)
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] [version]\n", os.Args[0])
 		fmt.Fprint(os.Stderr, usageMsg)
 		fmt.Fprintf(os.Stderr, "\nOptions:\n")
 		flag.PrintDefaults()
@@ -36,6 +34,7 @@ func main() {
 		os.Exit(2)
 	}
 	flag.Parse()
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
 
 	if flag.NArg() == 1 && flag.Arg(0) == "version" {
 		version()
