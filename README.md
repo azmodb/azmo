@@ -1,6 +1,6 @@
 # AzmoDB [![GoDoc](https://godoc.org/github.com/azmodb/azmo?status.svg)](https://godoc.org/github.com/azmodb/azmo)
 
-AzmoDB is an distributed, immutable, consistent, in-memory key/value store.
+AzmoDB is a distributed, immutable, consistent, in-memory key/value store.
 
 > **WARNING:** This software is new, experimental, and under heavy
 > development. The documentation is lacking, if any. There are almost
