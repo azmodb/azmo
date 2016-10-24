@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/azmodb/azmo"
 	pb "github.com/azmodb/azmo/azmopb"
 	"golang.org/x/net/context"
 )
@@ -36,7 +35,7 @@ database.
 	}
 )
 
-func scan(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) (err error) {
+func scan(ctx context.Context, d *dialer, args []string) (err error) {
 	flags := flag.FlagSet{}
 	flags.Usage = func() {
 		fmt.Fprintf(os.Stderr, "%s: range [options] from to [revision]\n", self)
@@ -68,10 +67,15 @@ func scan(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) (err 
 	c := d.dial()
 	defer c.Close()
 
-	return c.Range(ctx, enc, req)
+	ev, err := c.Range(ctx, req)
+	if err != nil {
+		return err
+	}
+	fmt.Println(ev)
+	return nil
 }
 
-func forEach(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) (err error) {
+func forEach(ctx context.Context, d *dialer, args []string) (err error) {
 	flags := flag.FlagSet{}
 	flags.Usage = func() {
 		fmt.Fprintf(os.Stderr, "%s: foreach [options] [revision]\n", self)
@@ -100,5 +104,10 @@ func forEach(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) (e
 	c := d.dial()
 	defer c.Close()
 
-	return c.Range(ctx, enc, req)
+	ev, err := c.Range(ctx, req)
+	if err != nil {
+		return err
+	}
+	fmt.Println(ev)
+	return nil
 }

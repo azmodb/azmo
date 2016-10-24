@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/azmodb/azmo"
-	pb "github.com/azmodb/azmo/azmopb"
 	"golang.org/x/net/context"
 )
 
@@ -20,7 +18,7 @@ returns an error.
 	Run:   watch,
 }
 
-func watch(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) error {
+func watch(ctx context.Context, d *dialer, args []string) error {
 	flags := flag.FlagSet{}
 	flags.Usage = func() {
 		fmt.Fprintf(os.Stderr, "%s: watch key", self)
@@ -32,12 +30,13 @@ func watch(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) erro
 	}
 	args = flags.Args()
 
-	req := &pb.WatchRequest{
-		Key: []byte(args[0]),
-	}
+	//req := &pb.WatchRequest{
+	//	Key: []byte(args[0]),
+	//}
 
 	c := d.dial()
 	defer c.Close()
 
-	return c.Watch(ctx, enc, req)
+	//return c.Watch(ctx, enc, req)
+	return nil
 }

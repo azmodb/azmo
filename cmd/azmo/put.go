@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/azmodb/azmo"
 	pb "github.com/azmodb/azmo/azmopb"
 	"golang.org/x/net/context"
 )
@@ -23,7 +22,7 @@ It the key exists and the value data type differ, it returns an error.
 	Run:   put,
 }
 
-func put(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) error {
+func put(ctx context.Context, d *dialer, args []string) error {
 	flags := flag.FlagSet{}
 	flags.Usage = func() {
 		fmt.Fprintf(os.Stderr, "%s: put [options] key value\n", self)
@@ -47,5 +46,10 @@ func put(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) error 
 	c := d.dial()
 	defer c.Close()
 
-	return c.Put(ctx, enc, req)
+	ev, err := c.Put(ctx, req)
+	if err != nil {
+		return err
+	}
+	fmt.Println(ev)
+	return nil
 }

@@ -45,14 +45,14 @@ func main() {
 		usage()
 	}
 	if name == "help" {
-		if err := helpCmd.Run(nil, nil, nil, args); err != nil {
+		if err := helpCmd.Run(nil, nil, args); err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
 		os.Exit(0)
 	}
 	if name == "version" {
-		if err := versionCmd.Run(nil, nil, nil, nil); err != nil {
+		if err := versionCmd.Run(nil, nil, nil); err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
@@ -62,7 +62,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	errc := make(chan error)
 	dialer := &dialer{addr: *addr, timeout: *timeout}
-	go func() { errc <- cmd.Run(ctx, dialer, fmtEncoder{}, args) }()
+	go func() { errc <- cmd.Run(ctx, dialer, args) }()
 
 	sigc := make(chan os.Signal)
 	signal.Notify(sigc, os.Interrupt, os.Kill)

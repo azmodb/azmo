@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/azmodb/azmo"
 	pb "github.com/azmodb/azmo/azmopb"
 	"golang.org/x/net/context"
 )
@@ -22,7 +21,7 @@ revision must match the supplied rev.
 	Run:   get,
 }
 
-func get(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) (err error) {
+func get(ctx context.Context, d *dialer, args []string) (err error) {
 	flags := flag.FlagSet{}
 	flags.Usage = func() {
 		fmt.Fprintf(os.Stderr, "%s: get [options] key [revision]\n", self)
@@ -30,7 +29,7 @@ func get(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) (err e
 		flags.PrintDefaults()
 		os.Exit(2)
 	}
-	equal := flags.Bool("equal", false, "supplied revision must equal value revision")
+	equal := flags.Bool("equal", false, "revision must equal value revision")
 	flags.Parse(args)
 	if flags.NArg() < 1 {
 		flags.Usage()
@@ -53,5 +52,10 @@ func get(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) (err e
 	c := d.dial()
 	defer c.Close()
 
-	return c.Get(ctx, enc, req)
+	ev, err := c.Get(ctx, req)
+	if err != nil {
+		return err
+	}
+	fmt.Println(ev)
+	return nil
 }

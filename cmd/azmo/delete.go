@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/azmodb/azmo"
 	pb "github.com/azmodb/azmo/azmopb"
 	"golang.org/x/net/context"
 )
@@ -19,7 +18,7 @@ Delete removes a key/value pair.
 	Run:   put,
 }
 
-func del(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) error {
+func del(ctx context.Context, d *dialer, args []string) error {
 	flags := flag.FlagSet{}
 	flags.Usage = func() {
 		fmt.Fprintf(os.Stderr, "%s: delete key\n", self)
@@ -38,5 +37,10 @@ func del(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) error 
 	c := d.dial()
 	defer c.Close()
 
-	return c.Delete(ctx, enc, req)
+	ev, err := c.Delete(ctx, req)
+	if err != nil {
+		return err
+	}
+	fmt.Println(ev)
+	return nil
 }

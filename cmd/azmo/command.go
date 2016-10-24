@@ -15,7 +15,7 @@ import (
 )
 
 type command struct {
-	Run   func(ctx context.Context, d *dialer, enc azmo.Encoder, args []string) error
+	Run   func(ctx context.Context, d *dialer, args []string) error
 	Args  string
 	Help  string
 	Short string
@@ -58,7 +58,7 @@ var (
 		Help:  helpMsg,
 		Short: "information about a command",
 		Args:  "command",
-		Run: func(_ context.Context, d *dialer, e azmo.Encoder, args []string) error {
+		Run: func(_ context.Context, d *dialer, args []string) error {
 			if len(args) <= 0 {
 				fmt.Fprintln(os.Stderr, helpMsg)
 				os.Exit(2)
@@ -76,7 +76,7 @@ var (
 		Help:  "Information about AzmoDB build version",
 		Short: "information about version",
 		Args:  "",
-		Run: func(_ context.Context, d *dialer, e azmo.Encoder, args []string) error {
+		Run: func(_ context.Context, d *dialer, args []string) error {
 			version()
 			return nil
 		},
