@@ -15,8 +15,6 @@ import (
 	"github.com/azmodb/db"
 )
 
-//var azmoVersion = fmt.Sprintf("alpha %s/%s %s", runtime.GOOS, runtime.GOARCH, time.Now())
-
 func main() {
 	var (
 		addr     = flag.String("addr", "localhost:7979", "network listen address")
@@ -85,8 +83,8 @@ func version() {
 }
 
 const usageMsg = `
-AzmoDB is an immutable, consistent, in-memory key/value store. AzmoDB
-uses an immutable Left-Leaning Red-Black tree (LLRB) internally and
+AzmoDB is an distributed, immutable, consistent, in-memory key/value store.
+AzmoDB uses an immutable Left-Leaning Red-Black tree (LLRB) internally and
 supports snapshotting.
 
 The database provides Atomicity, Consistency and Isolation from ACID.
