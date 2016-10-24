@@ -9,13 +9,13 @@ import (
 	"os/signal"
 	"runtime"
 	"text/tabwriter"
-	"time"
 
 	"github.com/azmodb/azmo"
+	"github.com/azmodb/azmo/build"
 	"github.com/azmodb/db"
 )
 
-var azmoVersion = fmt.Sprintf("alpha %s/%s %s", runtime.GOOS, runtime.GOARCH, time.Now())
+//var azmoVersion = fmt.Sprintf("alpha %s/%s %s", runtime.GOOS, runtime.GOARCH, time.Now())
 
 func main() {
 	var (
@@ -41,7 +41,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	fmt.Fprintf(os.Stdout, "AzmoDB Version:\t%s\n", azmoVersion)
+	version()
 
 	listener, err := net.Listen(*network, *addr)
 	if err != nil {
@@ -78,7 +78,7 @@ func main() {
 
 func version() {
 	tw := tabwriter.NewWriter(os.Stdout, 0, 8, 0, '\t', 0)
-	fmt.Fprintf(tw, "AzmoDB Version:\t%s\n", azmoVersion)
+	fmt.Fprintf(tw, "AzmoDB Version:\t%s\n", build.Version())
 	fmt.Fprintf(tw, "ARCH:\t%s\n", runtime.GOARCH)
 	fmt.Fprintf(tw, "OS:\t%s\n", runtime.GOOS)
 	tw.Flush()

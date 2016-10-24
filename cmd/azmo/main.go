@@ -51,14 +51,13 @@ func main() {
 		}
 		os.Exit(0)
 	}
-
-	/*
-		c, err := azmo.Dial(*addr, *timeout)
-		if err != nil {
-			log.Fatalf("dial azmo server: %v", err)
+	if name == "version" {
+		if err := versionCmd.Run(nil, nil, nil, nil); err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(1)
 		}
-		defer c.Close()
-	*/
+		os.Exit(0)
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	errc := make(chan error)

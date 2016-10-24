@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"sort"
+	"text/tabwriter"
 	"time"
 
 	"github.com/azmodb/azmo"
+	"github.com/azmodb/azmo/build"
 	"golang.org/x/net/context"
 )
 
@@ -41,6 +44,8 @@ func init() {
 
 	commands["put"] = putCmd
 	commands["delete"] = delCmd
+
+	commands["version"] = versionCmd
 	commands["help"] = helpCmd
 }
 
@@ -48,23 +53,42 @@ const helpMsg = `
 Use "azmo help [command]" for more information about a command.
 `
 
-var helpCmd = command{
-	Help:  helpMsg,
-	Short: "information about a command",
-	Args:  "command",
-	Run: func(_ context.Context, d *dialer, e azmo.Encoder, args []string) error {
-		if len(args) <= 0 {
-			fmt.Fprintln(os.Stderr, helpMsg)
-			os.Exit(2)
-		}
+var (
+	helpCmd = command{
+		Help:  helpMsg,
+		Short: "information about a command",
+		Args:  "command",
+		Run: func(_ context.Context, d *dialer, e azmo.Encoder, args []string) error {
+			if len(args) <= 0 {
+				fmt.Fprintln(os.Stderr, helpMsg)
+				os.Exit(2)
+			}
 
-		cmd, found := commands[args[0]]
-		if !found {
-			return fmt.Errorf("%s: unknown command %q", self, args[0])
-		}
-		fmt.Println(cmd.Help)
-		return nil
-	},
+			cmd, found := commands[args[0]]
+			if !found {
+				return fmt.Errorf("%s: unknown command %q", self, args[0])
+			}
+			fmt.Println(cmd.Help)
+			return nil
+		},
+	}
+	versionCmd = command{
+		Help:  "Information about AzmoDB build version",
+		Short: "information about version",
+		Args:  "",
+		Run: func(_ context.Context, d *dialer, e azmo.Encoder, args []string) error {
+			version()
+			return nil
+		},
+	}
+)
+
+func version() {
+	tw := tabwriter.NewWriter(os.Stdout, 0, 8, 0, '\t', 0)
+	fmt.Fprintf(tw, "AzmoDB Version:\t%s\n", build.Version())
+	fmt.Fprintf(tw, "ARCH:\t%s\n", runtime.GOARCH)
+	fmt.Fprintf(tw, "OS:\t%s\n", runtime.GOOS)
+	tw.Flush()
 }
 
 type help struct {
