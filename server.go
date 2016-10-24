@@ -192,10 +192,10 @@ func (s *server) Watch(req *pb.WatchRequest, srv pb.DB_WatchServer) error {
 
 type ServerOption func(*server) error
 
-func Listen(db *db.DB, listener net.Listener, cert, key string, opts ...ServerOption) error {
+func Listen(db *db.DB, listener net.Listener, cert, key string, opts ...ServerOption) (err error) {
 	server := &server{db: db}
 	for _, opt := range opts {
-		if err := opt(server); err != nil {
+		if err = opt(server); err != nil {
 			return err
 		}
 	}
