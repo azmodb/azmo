@@ -1,12 +1,17 @@
 package main
 
 import (
-	"context"
+	"encoding/json"
+	"encoding/xml"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
+
+	"github.com/azmodb/azmo"
+
+	"golang.org/x/net/context"
 )
 
 func usage() {
@@ -23,10 +28,33 @@ func usage() {
 var (
 	addr    = flag.String("addr", "localhost:7979", "service network address")
 	timeout = flag.Duration("timeout", 0, "dialing timeout")
+	jsonFmt = flag.Bool("json", false, "write json encoded output to stdout")
+	xmlFmt  = flag.Bool("xml", false, "write xml encoded output to stdout")
 	self    string
 )
 
 func init() { self = os.Args[0] }
+
+func encode(v interface{}) error {
+	if *jsonFmt {
+		return json.NewEncoder(os.Stdout).Encode(v)
+	}
+	if *xmlFmt {
+		return xml.NewEncoder(os.Stdout).Encode(v)
+	}
+
+	switch t := v.(type) {
+	case []*azmo.Event:
+		for _, ev := range t {
+			fmt.Println(ev)
+		}
+	case *azmo.Event:
+		fmt.Println(t)
+	default:
+		log.Panicf("cannot encode %T", v)
+	}
+	return nil
+}
 
 func main() {
 	flag.Usage = usage

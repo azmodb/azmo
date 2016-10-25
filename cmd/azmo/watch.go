@@ -1,10 +1,14 @@
 package main
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"flag"
 	"fmt"
 	"os"
 
+	"github.com/azmodb/azmo"
+	pb "github.com/azmodb/azmo/azmopb"
 	"golang.org/x/net/context"
 )
 
@@ -16,6 +20,25 @@ returns an error.
 	Short: "notifier for a key",
 	Args:  "key",
 	Run:   watch,
+}
+
+type jsonNotifier struct{}
+
+func (n jsonNotifier) Notify(ev *azmo.Event) error {
+	return json.NewEncoder(os.Stdout).Encode(ev)
+}
+
+type xmlNotifier struct{}
+
+func (n xmlNotifier) Notify(ev *azmo.Event) error {
+	return xml.NewEncoder(os.Stdout).Encode(ev)
+}
+
+type fmtNotifier struct{}
+
+func (n fmtNotifier) Notify(ev *azmo.Event) error {
+	_, err := fmt.Println(ev)
+	return err
 }
 
 func watch(ctx context.Context, d *dialer, args []string) error {
@@ -30,13 +53,15 @@ func watch(ctx context.Context, d *dialer, args []string) error {
 	}
 	args = flags.Args()
 
-	//req := &pb.WatchRequest{
-	//	Key: []byte(args[0]),
-	//}
+	req := &pb.WatchRequest{
+		Key: []byte(args[0]),
+	}
 
 	c := d.dial()
 	defer c.Close()
 
-	//return c.Watch(ctx, enc, req)
-	return nil
+	if *jsonFmt {
+		return c.Watch(ctx, req, jsonNotifier{})
+	}
+	return c.Watch(ctx, req, fmtNotifier{})
 }

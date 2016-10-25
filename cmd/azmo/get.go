@@ -56,6 +56,6 @@ func get(ctx context.Context, d *dialer, args []string) (err error) {
 	if err != nil {
 		return err
 	}
-	fmt.Println(ev)
-	return nil
+
+	return encode(ev)
 }

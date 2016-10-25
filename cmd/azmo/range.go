@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -67,11 +68,17 @@ func scan(ctx context.Context, d *dialer, args []string) (err error) {
 	c := d.dial()
 	defer c.Close()
 
-	ev, err := c.Range(ctx, req)
+	evs, err := c.Range(ctx, req)
 	if err != nil {
 		return err
 	}
-	fmt.Println(ev)
+
+	if *jsonFmt {
+		return json.NewEncoder(os.Stdout).Encode(evs)
+	}
+	for _, ev := range evs {
+		fmt.Printf("created:%d current:%d\n%s\n", ev.Created, ev.Current, ev.Content)
+	}
 	return nil
 }
 
@@ -104,10 +111,10 @@ func forEach(ctx context.Context, d *dialer, args []string) (err error) {
 	c := d.dial()
 	defer c.Close()
 
-	ev, err := c.Range(ctx, req)
+	evs, err := c.Range(ctx, req)
 	if err != nil {
 		return err
 	}
-	fmt.Println(ev)
-	return nil
+
+	return encode(evs)
 }

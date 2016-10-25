@@ -41,6 +41,6 @@ func del(ctx context.Context, d *dialer, args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(ev)
-	return nil
+
+	return encode(ev)
 }
