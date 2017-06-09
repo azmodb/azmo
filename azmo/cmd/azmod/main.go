@@ -10,9 +10,9 @@ import (
 	"runtime"
 	"text/tabwriter"
 
-	"github.com/azmodb/azmo"
-	"github.com/azmodb/azmo/build"
 	"github.com/azmodb/db"
+	"github.com/azmodb/exp/azmo"
+	"github.com/azmodb/exp/azmo/build"
 )
 
 func main() {

@@ -9,8 +9,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/azmodb/azmo"
-
+	"github.com/azmodb/exp/azmo"
 	"golang.org/x/net/context"
 )
 

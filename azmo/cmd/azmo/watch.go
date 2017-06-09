@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/azmodb/azmo"
-	pb "github.com/azmodb/azmo/azmopb"
+	"github.com/azmodb/exp/azmo"
+	pb "github.com/azmodb/exp/azmo/azmopb"
 	"golang.org/x/net/context"
 )
 

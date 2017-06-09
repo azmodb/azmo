@@ -9,8 +9,8 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/azmodb/azmo"
-	"github.com/azmodb/azmo/build"
+	"github.com/azmodb/exp/azmo"
+	"github.com/azmodb/exp/azmo/build"
 	"golang.org/x/net/context"
 )
 

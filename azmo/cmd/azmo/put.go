@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	pb "github.com/azmodb/azmo/azmopb"
+	pb "github.com/azmodb/exp/azmo/azmopb"
 	"golang.org/x/net/context"
 )
 

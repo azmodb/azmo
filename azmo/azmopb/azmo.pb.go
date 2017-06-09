@@ -288,6 +288,27 @@ func (m *DecrementRequest) String() string            { return proto.CompactText
 func (*DecrementRequest) ProtoMessage()               {}
 func (*DecrementRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
+func (m *DecrementRequest) GetKey() []byte {
+	if m != nil {
+		return m.Key
+	}
+	return nil
+}
+
+func (m *DecrementRequest) GetValue() int64 {
+	if m != nil {
+		return m.Value
+	}
+	return 0
+}
+
+func (m *DecrementRequest) GetTombstone() bool {
+	if m != nil {
+		return m.Tombstone
+	}
+	return false
+}
+
 type IncrementRequest struct {
 	Key       []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Value     int64  `protobuf:"varint,2,opt,name=value" json:"value,omitempty"`
@@ -298,6 +319,27 @@ func (m *IncrementRequest) Reset()                    { *m = IncrementRequest{} 
 func (m *IncrementRequest) String() string            { return proto.CompactTextString(m) }
 func (*IncrementRequest) ProtoMessage()               {}
 func (*IncrementRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *IncrementRequest) GetKey() []byte {
+	if m != nil {
+		return m.Key
+	}
+	return nil
+}
+
+func (m *IncrementRequest) GetValue() int64 {
+	if m != nil {
+		return m.Value
+	}
+	return 0
+}
+
+func (m *IncrementRequest) GetTombstone() bool {
+	if m != nil {
+		return m.Tombstone
+	}
+	return false
+}
 
 type PutRequest struct {
 	Key       []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
@@ -310,6 +352,27 @@ func (m *PutRequest) String() string            { return proto.CompactTextString
 func (*PutRequest) ProtoMessage()               {}
 func (*PutRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
 
+func (m *PutRequest) GetKey() []byte {
+	if m != nil {
+		return m.Key
+	}
+	return nil
+}
+
+func (m *PutRequest) GetValue() []byte {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *PutRequest) GetTombstone() bool {
+	if m != nil {
+		return m.Tombstone
+	}
+	return false
+}
+
 type DeleteRequest struct {
 	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 }
@@ -318,6 +381,13 @@ func (m *DeleteRequest) Reset()                    { *m = DeleteRequest{} }
 func (m *DeleteRequest) String() string            { return proto.CompactTextString(m) }
 func (*DeleteRequest) ProtoMessage()               {}
 func (*DeleteRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+
+func (m *DeleteRequest) GetKey() []byte {
+	if m != nil {
+		return m.Key
+	}
+	return nil
+}
 
 type GetRequest struct {
 	Key       []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
@@ -329,6 +399,27 @@ func (m *GetRequest) Reset()                    { *m = GetRequest{} }
 func (m *GetRequest) String() string            { return proto.CompactTextString(m) }
 func (*GetRequest) ProtoMessage()               {}
 func (*GetRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+
+func (m *GetRequest) GetKey() []byte {
+	if m != nil {
+		return m.Key
+	}
+	return nil
+}
+
+func (m *GetRequest) GetRevision() int64 {
+	if m != nil {
+		return m.Revision
+	}
+	return 0
+}
+
+func (m *GetRequest) GetMustEqual() bool {
+	if m != nil {
+		return m.MustEqual
+	}
+	return false
+}
 
 type RangeRequest struct {
 	From     []byte `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
@@ -342,6 +433,34 @@ func (m *RangeRequest) String() string            { return proto.CompactTextStri
 func (*RangeRequest) ProtoMessage()               {}
 func (*RangeRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
 
+func (m *RangeRequest) GetFrom() []byte {
+	if m != nil {
+		return m.From
+	}
+	return nil
+}
+
+func (m *RangeRequest) GetTo() []byte {
+	if m != nil {
+		return m.To
+	}
+	return nil
+}
+
+func (m *RangeRequest) GetRevision() int64 {
+	if m != nil {
+		return m.Revision
+	}
+	return 0
+}
+
+func (m *RangeRequest) GetLimit() int32 {
+	if m != nil {
+		return m.Limit
+	}
+	return 0
+}
+
 type WatchRequest struct {
 	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 }
@@ -350,6 +469,13 @@ func (m *WatchRequest) Reset()                    { *m = WatchRequest{} }
 func (m *WatchRequest) String() string            { return proto.CompactTextString(m) }
 func (*WatchRequest) ProtoMessage()               {}
 func (*WatchRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
+
+func (m *WatchRequest) GetKey() []byte {
+	if m != nil {
+		return m.Key
+	}
+	return nil
+}
 
 type Event struct {
 	Type    Event_Type `protobuf:"varint,1,opt,name=type,enum=db.Event_Type" json:"type,omitempty"`
@@ -364,6 +490,48 @@ func (m *Event) Reset()                    { *m = Event{} }
 func (m *Event) String() string            { return proto.CompactTextString(m) }
 func (*Event) ProtoMessage()               {}
 func (*Event) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9} }
+
+func (m *Event) GetType() Event_Type {
+	if m != nil {
+		return m.Type
+	}
+	return Event_DECREMENT
+}
+
+func (m *Event) GetContent() []byte {
+	if m != nil {
+		return m.Content
+	}
+	return nil
+}
+
+func (m *Event) GetNumeric() int64 {
+	if m != nil {
+		return m.Numeric
+	}
+	return 0
+}
+
+func (m *Event) GetKey() []byte {
+	if m != nil {
+		return m.Key
+	}
+	return nil
+}
+
+func (m *Event) GetCreated() int64 {
+	if m != nil {
+		return m.Created
+	}
+	return 0
+}
+
+func (m *Event) GetCurrent() int64 {
+	if m != nil {
+		return m.Current
+	}
+	return 0
+}
 
 func init() {
 	proto.RegisterType((*BatchRequest)(nil), "db.BatchRequest")
@@ -385,7 +553,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion3
+const _ = grpc.SupportPackageIsVersion4
 
 // Client API for DB service
 
@@ -761,7 +929,7 @@ var _DB_serviceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: fileDescriptor0,
+	Metadata: "azmo.proto",
 }
 
 func init() { proto.RegisterFile("azmo.proto", fileDescriptor0) }
