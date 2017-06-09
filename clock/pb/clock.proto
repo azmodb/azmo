@@ -1,0 +1,15 @@
+syntax = "proto3";
+package pb;
+
+message Clock {
+	repeated Item items = 1;
+	int64 created       = 2;
+	int64 modified      = 3;
+	uint64 last         = 4;
+}
+
+message Item {
+	string ID           = 1;
+	uint64 tick         = 2;
+	int64 when          = 3;
+}
