@@ -1,0 +1,32 @@
+syntax = "proto3";
+package pb;
+
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_enum_prefix_all) = false;
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+option (gogoproto.marshaler_all) = true;
+
+enum Method {
+	InvalidMethod = 0;
+	FlowMethod    = 1;
+	AsyncMethod   = 2;
+}
+
+message Request {
+	Method method = 1;
+	uint64 seq    = 2;
+}
+
+message Response {
+	string method = 1;
+	uint64 seq    = 2;
+	Error error   = 3;
+}
+
+message Error {
+	string description = 1;
+	int32 err_code     = 2;
+}
