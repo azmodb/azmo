@@ -1,0 +1,29 @@
+Language: Cpp
+IndentWidth: 4
+TabWidth: 4
+UseTab: ForIndentation
+SortIncludes: false
+
+ForEachMacros: ['RB_FOREACH', 'TAILQ_FOREACH']
+
+AlwaysBreakAfterDefinitionReturnType: true
+AlignConsecutiveDeclarations: true
+AlignConsecutiveAssignments: true
+SpaceBeforeParens: Never
+MaxEmptyLinesToKeep: 1
+PointerAlignment: Left
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+IndentCaseLabels: false
+SpacesBeforeTrailingComments: 1
+
+AlignAfterOpenBracket: DontAlign
+BreakBeforeBraces: Linux
+AlignTrailingComments: true
+
+
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false

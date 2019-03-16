@@ -1,0 +1,7 @@
+tool/generator/generator
+bricktop/bricktop
+volumed/volumed
+
+*.[ao]
+c.out
+*.swp
